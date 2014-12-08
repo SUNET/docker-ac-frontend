@@ -30,6 +30,27 @@ if [ ! -f "$KEYDIR/private/shibsp.key" -o ! -f "$KEYDIR/certs/shibsp.crt" ]; the
    mv /tmp/sp-cert.pem "$KEYDIR/certs/shibsp.crt"
 fi
 
+if [ ! -f "$KEYDIR/private/${SP_HOSTNAME}.key" -o ! -f "$KEYDIR/certs/${SP_HOSTNAME}.crt" ]; then
+   make-ssl-cert generate-default-snakeoil --force-overwrite
+   cp /etc/ssl/private/ssl-cert-snakeoil.key "$KEYDIR/private/${SP_HOSTNAME}.key"
+   cp /etc/ssl/certs/ssl-cert-snakeoil.pem "$KEYDIR/certs/${SP_HOSTNAME}.crt"
+fi
+
+CHAINSPEC=""
+export CHAINSPEC
+if [ -f "$KEYDIR/certs/${SP_HOSTNAME}.chain" ]; then
+   CHAINSPEC="SSLCertificateChainFile $KEYDIR/certs/${SP_HOSTNAME}.chain"
+elif [ -f "$KEYDIR/certs/${SP_HOSTNAME}-chain.crt" ]; then
+   CHAINSPEC="SSLCertificateChainFile $KEYDIR/certs/${SP_HOSTNAME}-chain.crt"
+elif [ -f "$KEYDIR/certs/${SP_HOSTNAME}.chain.crt" ]; then
+   CHAINSPEC="SSLCertificateChainFile $KEYDIR/certs/${SP_HOSTNAME}.chain.crt"
+elif [ -f "$KEYDIR/certs/chain.crt" ]; then
+   CHAINSPEC="SSLCertificateChainFile $KEYDIR/certs/chain.crt"
+elif [ -f "$KEYDIR/certs/chain.pem" ]; then
+   CHAINSPEC="SSLCertificateChainFile $KEYDIR/certs/chain.pem"
+fi
+
+
 cat>/etc/shibboleth/shibboleth2.xml<<EOF
 <SPConfig xmlns="urn:mace:shibboleth:2.0:native:sp:config"
     xmlns:conf="urn:mace:shibboleth:2.0:native:sp:config"
@@ -86,6 +107,9 @@ cat>/etc/shibboleth/shibboleth2.xml<<EOF
         <Errors supportContact="${SP_CONTACT}"
             helpLocation="${SP_ABOUT}"
             styleSheet="/shibboleth-sp/main.css"/>
+
+        <Notify Channel="front" Location="https://${SP_HOSTNAME}/system/tenant/logout-notify.php" />
+
         <MetadataProvider type="XML" uri="http://md.nordu.net/role/idp.xml" backingFilePath="metadata.xml" reloadInterval="7200">
         </MetadataProvider>
         <AttributeExtractor type="XML" validate="true" reloadChanges="false" path="attribute-map.xml"/>
@@ -110,13 +134,15 @@ cat>/etc/apache2/sites-available/default.conf<<EOF
 </VirtualHost>
 EOF
 
+echo "connect" > /var/www/_lvs.txt
+
 cat>/etc/apache2/sites-available/default-ssl.conf<<EOF
 <VirtualHost *:443>
         ServerName ${SP_HOSTNAME}
         SSLProtocol TLSv1 
         SSLEngine On
         SSLCertificateFile $KEYDIR/certs/${SP_HOSTNAME}.crt
-        SSLCertificateChainFile $KEYDIR/certs/chain.crt
+        ${CHAINSPEC}
         SSLCertificateKeyFile $KEYDIR/private/${SP_HOSTNAME}.key
         DocumentRoot /var/www/
         
@@ -228,6 +254,23 @@ $c->get("https://${SP_HOSTNAME}/api/xml?action=logout&session=".$session);
 ?>
    <script>
       location.href="https://${SP_HOSTNAME}/Shibboleth.sso/Logout"
+   </script>
+   </body>
+</html>
+EOF
+
+cat>/var/www/system/tenant/logout-notify.php<<EOF
+<?php $session=$_COOKIE['BREEZESESSION']; setcookie("BREEZESESSION","",time()-3600,"/"); ?>
+<html>
+   <head><title>Logout</title></head>
+   <body>
+<?php
+require_once 'HTTP/Client.php';
+$c = new HTTP_Client();
+$c->get("https://${SP_HOSTNAME}/api/xml?action=logout&session=".$session);
+?>
+   <script>
+      location.href="<?php echo $_GET['return']; ?>"
    </script>
    </body>
 </html>

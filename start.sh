@@ -139,7 +139,9 @@ echo "connect" > /var/www/_lvs.txt
 cat>/etc/apache2/sites-available/default-ssl.conf<<EOF
 <VirtualHost *:443>
         ServerName ${SP_HOSTNAME}
-        SSLProtocol TLSv1 
+        SSLProtocol All -SSLv2 -SSLv3
+        SSLCompression Off
+        SSLCipherSuite "EECDH+ECDSA+AESGCM EECDH+aRSA+AESGCM EECDH+ECDSA+SHA384 EECDH+ECDSA+SHA256 EECDH+aRSA+SHA384 EECDH+aRSA+SHA256 EECDH+AESGCM EECDH EDH+AESGCM EDH+aRSA HIGH !MEDIUM !LOW !aNULL !eNULL !LOW !RC4 !MD5 !EXP !PSK !SRP !DSS"
         SSLEngine On
         SSLCertificateFile $KEYDIR/certs/${SP_HOSTNAME}.crt
         ${CHAINSPEC}
@@ -204,7 +206,7 @@ cat>>/etc/apache2/sites-available/default-ssl.conf<<EOF
            Deny from all
            Allow from 109.105.104.0/24
            Allow from 193.11.3.30
-           Allow from 83.227.179.169
+           Allow from 62.102.145.131
            Allow from 127.0.0.1
         </Location> 
 

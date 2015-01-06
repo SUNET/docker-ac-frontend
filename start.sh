@@ -137,6 +137,7 @@ EOF
 echo "connect" > /var/www/_lvs.txt
 
 cat>/etc/apache2/sites-available/default-ssl.conf<<EOF
+ServerName ${SP_HOSTNAME}
 <VirtualHost *:443>
         ServerName ${SP_HOSTNAME}
         SSLProtocol All -SSLv2 -SSLv3
@@ -165,6 +166,7 @@ cat>/etc/apache2/sites-available/default-ssl.conf<<EOF
         RewriteRule ^(.*/)index.html$ $1 [L,R=301]
 
         ErrorLog /var/log/apache2/error.log
+ 
         # Possible values include: debug, info, notice, warn, error, crit,
         # alert, emerg.
         LogLevel warn
@@ -181,6 +183,7 @@ cat>/etc/apache2/sites-available/default-ssl.conf<<EOF
         ProxyPass /errors !
 	ProxyPass /_lvs.txt !
 
+        ProxyTimeout 30
         ProxyPass / balancer://connect/ stickysession=BREEZESESSION|session
         ProxyPassReverse / balancer://connect/
         ProxyPreserveHost On
@@ -245,14 +248,17 @@ EOF
 
 mkdir -p /var/www/system/tenant
 cat>/var/www/system/tenant/logout.php<<EOF
-<?php $session=$_COOKIE['BREEZESESSION']; setcookie("BREEZESESSION","",time()-3600,"/"); ?>
+<?php 
+\$session = isset(\$_COOKIE['BREEZESESSION']) ? \$_COOKIE['BREEZESESSION'] : "";
+setcookie("BREEZESESSION","",time()-3600,"/"); 
+?>
 <html>
    <head><title>Logout</title></head>
    <body>
 <?php
 require_once 'HTTP/Client.php';
-$c = new HTTP_Client();
-$c->get("https://${SP_HOSTNAME}/api/xml?action=logout&session=".$session);
+\$c = new HTTP_Client();
+\$c->get("https://${SP_HOSTNAME}/api/xml?action=logout&session=".\$session);
 ?>
    <script>
       location.href="https://${SP_HOSTNAME}/Shibboleth.sso/Logout"
@@ -262,17 +268,20 @@ $c->get("https://${SP_HOSTNAME}/api/xml?action=logout&session=".$session);
 EOF
 
 cat>/var/www/system/tenant/logout-notify.php<<EOF
-<?php $session=$_COOKIE['BREEZESESSION']; setcookie("BREEZESESSION","",time()-3600,"/"); ?>
+<?php 
+\$session = isset(\$_COOKIE['BREEZESESSION']) ? \$_COOKIE['BREEZESESSION'] : "";
+setcookie("BREEZESESSION","",time()-3600,"/"); 
+?>
 <html>
    <head><title>Logout</title></head>
    <body>
 <?php
 require_once 'HTTP/Client.php';
-$c = new HTTP_Client();
-$c->get("https://${SP_HOSTNAME}/api/xml?action=logout&session=".$session);
+\$c = new HTTP_Client();
+\$c->get("https://${SP_HOSTNAME}/api/xml?action=logout&session=".\$session);
 ?>
    <script>
-      location.href="<?php echo $_GET['return']; ?>"
+      location.href="<?php echo \$_GET['return']; ?>"
    </script>
    </body>
 </html>

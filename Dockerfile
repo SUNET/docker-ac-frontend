@@ -12,17 +12,21 @@ RUN a2enmod proxy_http
 RUN a2enmod proxy_balancer
 RUN a2enmod lbmethod_byrequests
 RUN a2enmod headers
+RUN a2enmod cgi
 ENV SP_HOSTNAME ac.example.com
 ENV SP_CONTACT noc@nordu.net
 ENV SP_ABOUT /about
 ENV METADATA_SIGNER md-signer.crt
 ENV APPSERVERS "app1.example.com app2.example.com"
+ENV DEFAULT_LOGIN md.nordu.net
 RUN rm -f /etc/apache2/sites-available/*
 RUN rm -f /etc/apache2/sites-enabled/*
 ADD start.sh /start.sh
 RUN chmod a+rx /start.sh
 ADD md-signer.crt /etc/shibboleth/md-signer.crt
 ADD attribute-map.xml /etc/shibboleth/attribute-map.xml
+ADD secure /var/www/secure
+ADD shibd.logger /etc/shibboleth/shibd.logger
 EXPOSE 443
 EXPOSE 80
 ENTRYPOINT ["/start.sh"]

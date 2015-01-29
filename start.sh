@@ -9,16 +9,20 @@ if [ "x${BACKEND_PORT}" != "x" ]; then
    HTTP_PORT=`echo "${BACKEND_PORT}" | sed 's%/%%g' | awk -F: '{ print $3 }'`
 fi
 
-if [ "x$SP_HOSTNAME" = "x" ]; then
+if [ "x${SP_HOSTNAME}" = "x" ]; then
    SP_HOSTNAME="`hostname`"
 fi
 
-if [ "x$SP_CONTACT" = "x" ]; then
-   SP_CONTACT="info@$SP_CONTACT"
+if [ "x${SP_CONTACT}" = "x" ]; then
+   SP_CONTACT="info@${SP_HOSTNAME}"
 fi
 
-if [ "x$SP_ABOUT" = "x" ]; then
+if [ "x${SP_ABOUT}" = "x" ]; then
    SP_ABOUT="/about"
+fi
+
+if ["x${DEFAULT_LOGIN}" = "x" ]; then
+   DEFAULT_LOGIN="md.nordu.net" 
 fi
 
 KEYDIR=/etc/ssl
@@ -75,23 +79,23 @@ cat>/etc/shibboleth/shibboleth2.xml<<EOF
                                          Binding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST"
                                          conf:ignoreNoPassive="true" />
 
-            <SessionInitiator type="Chaining" Location="/DS/nordu.net" id="nordunet" relayState="cookie">
+            <SessionInitiator type="Chaining" Location="/DS/nordu.net" id="md.nordu.net" relayState="cookie">
                 <SessionInitiator type="SAML2" defaultACSIndex="1" acsByIndex="false" template="bindingTemplate.html"/>
                 <SessionInitiator type="Shib1" defaultACSIndex="5"/>
                 <SessionInitiator type="SAMLDS" URL="http://md.nordu.net/role/idp.ds"/>
             </SessionInitiator>
 
-            <SessionInitiator type="Chaining" Location="/DS/kalmar2" id="kalmar2" relayState="cookie">
+            <SessionInitiator type="Chaining" Location="/DS/kalmar2" id="kalmar2.org" relayState="cookie">
                 <SessionInitiator type="SAML2" defaultACSIndex="1" acsByIndex="false" template="bindingTemplate.html"/>
                 <SessionInitiator type="Shib1" defaultACSIndex="5"/>
                 <SessionInitiator type="SAMLDS" URL="https://kalmar2.org/simplesaml/module.php/discopower/disco.php"/>
             </SessionInitiator>
  
-            <SessionInitiator type="Chaining" Location="/Login/feide" id="feide" relayState="cookie" entityID="https://idp.feide.no">
+            <SessionInitiator type="Chaining" Location="/Login/feide" id="idp.feide.no" relayState="cookie" entityID="https://idp.feide.no">
                 <SessionInitiator type="SAML2" defaultACSIndex="1" acsByIndex="false" template="bindingTemplate.html"/>
             </SessionInitiator>
 
-            <SessionInitiator type="Chaining" Location="/DS/haka.funet.fi" id="haka" relayState="cookie">
+            <SessionInitiator type="Chaining" Location="/DS/haka.funet.fi" id="haka.funet.fi" relayState="cookie">
                 <SessionInitiator type="SAML2" defaultACSIndex="1" acsByIndex="false" template="bindingTemplate.html"/>
                 <SessionInitiator type="Shib1" defaultACSIndex="5"/>
                 <SessionInitiator type="SAMLDS" URL="https://haka.funet.fi/shibboleth/WAYF"/>
@@ -120,6 +124,14 @@ cat>/etc/shibboleth/shibboleth2.xml<<EOF
     <SecurityPolicyProvider type="XML" validate="true" path="security-policy.xml"/>
     <ProtocolProvider type="XML" validate="true" reloadChanges="false" path="protocols.xml"/>
 </SPConfig>
+EOF
+
+augtool -s --noautoload --noload <<EOF
+set /augeas/load/xml/lens "Xml.lns"
+set /augeas/load/xml/incl "/etc/shibboleth/shibboleth2.xml"
+load
+defvar si /files/etc/shibboleth/shibboleth2.xml/SPConfig/ApplicationDefaults/Sessions/SessionInitiator[#attribute/id="$DEFAULT_LOGIN"]
+set \$si/#attribute/isDefault "true"
 EOF
 
 cat>/etc/apache2/sites-available/default.conf<<EOF
@@ -213,6 +225,14 @@ cat>>/etc/apache2/sites-available/default-ssl.conf<<EOF
            Allow from 127.0.0.1
         </Location> 
 
+        <Location /secure>
+           AuthType shibboleth
+           ShibRequireSession On
+           require valid-user
+           Options +ExecCGI
+           AddHandler cgi-script .cgi
+        </Location>
+
         <LocationMatch "^/(system/login|admin)$">
            AuthType shibboleth
            ShibRequireSession On
@@ -224,6 +244,7 @@ cat>>/etc/apache2/sites-available/default-ssl.conf<<EOF
            RequestHeader set MAIL %{mail}e
            RequestHeader set AFFILIATION %{affiliation}e
            RequestHeader set UNSCOPED_AFFILIATION %{unscoped_affiliation}e
+           RequestHeader set UNSCOPED_AFFILIATION %{unscoped-affiliation}e
         </LocationMatch>
         <LocationMatch "^/system/login-">
            AuthType shibboleth
@@ -236,6 +257,7 @@ cat>>/etc/apache2/sites-available/default-ssl.conf<<EOF
            RequestHeader set MAIL %{mail}e
            RequestHeader set AFFILIATION %{affiliation}e
            RequestHeader set UNSCOPED_AFFILIATION %{unscoped_affiliation}e
+           RequestHeader set UNSCOPED_AFFILIATION %{unscoped-affiliation}e
         </LocationMatch>
 
         <Location /favicon.ico>

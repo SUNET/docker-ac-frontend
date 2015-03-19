@@ -1,4 +1,4 @@
-#!/bin/sh -x
+#!/bin/sh
 
 printenv
 
@@ -83,6 +83,18 @@ cat>/etc/shibboleth/shibboleth2.xml<<EOF
                 <SessionInitiator type="SAML2" defaultACSIndex="1" acsByIndex="false" template="bindingTemplate.html"/>
                 <SessionInitiator type="Shib1" defaultACSIndex="5"/>
                 <SessionInitiator type="SAMLDS" URL="http://md.nordu.net/role/idp.ds"/>
+            </SessionInitiator>
+
+            <SessionInitiator type="Chaining" Location="/DS/nordu.net" id="nordu.net" relayState="cookie">
+                <SessionInitiator type="SAML2" defaultACSIndex="1" acsByIndex="false" template="bindingTemplate.html"/>
+                <SessionInitiator type="Shib1" defaultACSIndex="5"/>
+                <SessionInitiator type="SAMLDS" URL="http://md.nordu.net/role/idp.ds"/>
+            </SessionInitiator>
+
+            <SessionInitiator type="Chaining" Location="/DS/ds.sunet.se" id="sunet.se" relayState="cookie">
+                <SessionInitiator type="SAML2" defaultACSIndex="1" acsByIndex="false" template="bindingTemplate.html"/>
+                <SessionInitiator type="Shib1" defaultACSIndex="5"/>
+                <SessionInitiator type="SAMLDS" URL="http://md.nordu.net/swamid.ds"/>
             </SessionInitiator>
 
             <SessionInitiator type="Chaining" Location="/DS/kalmar2" id="kalmar2.org" relayState="cookie">
@@ -177,12 +189,17 @@ ServerName ${SP_HOSTNAME}
         RewriteRule ^/system/logout https://%{HTTP_HOST}/system/tenant/logout.php [R]
         RewriteRule ^(.*/)index.html$ $1 [L,R=301]
 
-        ErrorLog /var/log/apache2/error.log
- 
-        # Possible values include: debug, info, notice, warn, error, crit,
-        # alert, emerg.
+        HostnameLookups Off
+        ErrorLog /proc/self/fd/2
         LogLevel warn
-        CustomLog /var/log/apache2/access.log combined
+        LogFormat "%v:%p %h %l %u %t \"%r\" %>s %O \"%{Referer}i\" \"%{User-Agent}i\"" vhost_combined
+        LogFormat "%h %l %u %t \"%r\" %>s %O \"%{Referer}i\" \"%{User-Agent}i\"" combined
+        LogFormat "%h %l %u %t \"%r\" %>s %O" common
+        LogFormat "%{Referer}i -> %U" referer
+        LogFormat "%{User-agent}i" agent
+
+        CustomLog /proc/self/fd/1 combined
+
         ServerSignature off
 
         AddDefaultCharset utf-8
@@ -240,6 +257,7 @@ cat>>/etc/apache2/sites-available/default-ssl.conf<<EOF
            RequestHeader set X_REMOTE_USER %{eppn}e
            RequestHeader set EPPN %{eppn}e
            RequestHeader set GIVENNAME %{givenName}e
+           RequestHeader set DISPLAYNAME %{displayName}e
            RequestHeader set SN %{sn}e
            RequestHeader set MAIL %{mail}e
            RequestHeader set AFFILIATION %{affiliation}e
@@ -253,6 +271,7 @@ cat>>/etc/apache2/sites-available/default-ssl.conf<<EOF
            RequestHeader set X_REMOTE_USER %{eppn}e
            RequestHeader set EPPN %{eppn}e
            RequestHeader set GIVENNAME %{givenName}e
+           RequestHeader set DISPLAYNAME %{displayName}e
            RequestHeader set SN %{sn}e
            RequestHeader set MAIL %{mail}e
            RequestHeader set AFFILIATION %{affiliation}e
@@ -323,5 +342,6 @@ a2ensite default
 a2ensite default-ssl
 
 service shibd start
-service apache2 start
-tail -f /var/log/apache2/error.log
+rm -f /var/run/apache2/apache2.pid
+
+env APACHE_LOCK_DIR=/var/lock/apache2 APACHE_RUN_DIR=/var/run/apache2 APACHE_PID_FILE=/var/run/apache2/apache2.pid APACHE_RUN_USER=www-data APACHE_RUN_GROUP=www-data APACHE_LOG_DIR=/var/log/apache2 apache2 -DFOREGROUND

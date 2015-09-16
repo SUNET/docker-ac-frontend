@@ -27,6 +27,7 @@ ADD md-signer.crt /etc/shibboleth/md-signer.crt
 ADD attribute-map.xml /etc/shibboleth/attribute-map.xml
 ADD secure /var/www/secure
 ADD shibd.logger /etc/shibboleth/shibd.logger
+COPY /apache2.conf /etc/apache2/
 EXPOSE 443
 EXPOSE 80
 ENTRYPOINT ["/start.sh"]

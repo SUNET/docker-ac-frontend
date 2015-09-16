@@ -210,6 +210,7 @@ ServerName ${SP_HOSTNAME}
         ProxyPass /system/tenant !
         ProxyPass /secure !
         ProxyPass /errors !
+        ProxyPass /login.html !
 	ProxyPass /_lvs.txt !
 
         ProxyTimeout 30
@@ -288,6 +289,23 @@ cat>>/etc/apache2/sites-available/default-ssl.conf<<EOF
 EOF
 
 mkdir -p /var/www/system/tenant
+
+cat>/var/www/login.html<<EOF
+<html>
+  <body>
+     <h1>Login Test</h1>
+     <ul>
+        <li><a href="/Shibboleth.sso/DS/nordu.net?target=https://${SP_HOSTNAME}/">NORDUnet IdP Selector</a></li>
+        <li><a href="/Shibboleth.sso/DS/ds.sunet.se?target=https://${SP_HOSTNAME}/">SWAMID (SUNET) IdP Selector</a></li>
+        <li><a href="/Shibboleth.sso/DS/kalmar2?target=https://${SP_HOSTNAME}/">Kalmar2 IdP Selector</a></li>
+        <li><a href="/Shibboleth.sso/Login/feide?target=https://${SP_HOSTNAME}/">Feide</a></li>
+        <li><a href="/Shibboleth.sso/DS/haka.funet.fi?target=https://${SP_HOSTNAME}/">Haka (FUNET) IdP Selector</a></li>
+        <li><a href="/Shibboleth.sso/Login/idp.funet.fi?target=https://${SP_HOSTNAME}/">FUNET Guest IdP</a></li>
+     </ul>
+  </body>
+</html>
+EOF
+
 cat>/var/www/system/tenant/logout.php<<EOF
 <?php 
 \$session = isset(\$_COOKIE['BREEZESESSION']) ? \$_COOKIE['BREEZESESSION'] : "";
@@ -330,7 +348,7 @@ EOF
 
 adduser -- _shibd ssl-cert
 mkdir -p /var/log/shibboleth
-mkdir -p /var/log/apache2
+mkdir -p /var/log/apache2 /var/lock/apache2
 
 echo "----"
 cat /etc/shibboleth/shibboleth2.xml

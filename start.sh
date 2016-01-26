@@ -213,7 +213,7 @@ ServerName ${SP_HOSTNAME}
         ProxyPass /login.html !
 	ProxyPass /_lvs.txt !
 
-        ProxyTimeout 30
+        ProxyTimeout 60
         ProxyPass / balancer://connect/ stickysession=BREEZESESSION|session
         ProxyPassReverse / balancer://connect/
         ProxyPreserveHost On

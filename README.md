@@ -20,11 +20,11 @@ Make sure to install <public hostname>.key in /etc/ssl/private and <public hostn
 
 ```bash
   # docker run -p 80:80 -p 443:443 -v /var/log:/var/log \
-        -v /etc/ssl:/etc/ssl -e SP_HOSTNAME="<public hostname>" 
+        -v /etc/ssl:/etc/ssl -e DEFAULT_LOGIN="md.nordu.net|sunet.se|kalmar2.org|idp.feide.no|haka.funet.fi" -e SP_HOSTNAME="<public hostname>" 
         -e APPSERVERS="appserver1 appserver2 appserver ..." docker-ac-frontend
 ```
 
-Note that if you pull the image from a registry the name of the image (tag) may be different (eg registry.example.org/docker-ac-frontend).
+Note that if you pull the image from a registry the name of the image (tag) may be different (eg registry.example.org/docker-ac-frontend). Setting the DEFAULT_LOGIN env variable selects the default session initiator to be used. A number of common DS and IdPs are available including feide, swamid, haka.
 
 Keepalived config
 -----------------

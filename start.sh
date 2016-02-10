@@ -62,6 +62,8 @@ cat>/etc/shibboleth/shibboleth2.xml<<EOF
     xmlns:samlp="urn:oasis:names:tc:SAML:2.0:protocol"    
     xmlns:md="urn:oasis:names:tc:SAML:2.0:metadata"
     clockSkew="180">
+ 
+    <SessionCache type="StorageService" cacheAssertions="false" />
 
     <ApplicationDefaults entityID="https://${SP_HOSTNAME}/shibboleth"
                          REMOTE_USER="eppn persistent-id targeted-id">

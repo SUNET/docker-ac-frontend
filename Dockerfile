@@ -1,7 +1,8 @@
 FROM ubuntu
 MAINTAINER leifj@sunet.se
 RUN echo 'debconf debconf/frontend select Noninteractive' | debconf-set-selections
-RUN apt-get update
+RUN apt-get -q update
+RUN apt-get -y upgrade
 RUN apt-get -y install apache2 libapache2-mod-shib2 ssl-cert augeas-tools php-pear libapache2-mod-php5
 RUN pear install HTTP_Client
 RUN a2enmod rewrite

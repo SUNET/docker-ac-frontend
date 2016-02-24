@@ -47,3 +47,9 @@ On frontend #2:
 
 Remember to use the same random secret which is used for VRRP authentication. Afterwards (or if re-run) restart keepalived. 
 
+API secret
+----------
+
+You can supply your own API secret in `/etc/ssl/private/acp_spi_secret.txt`.
+An API secret will be automatically created if this file does not exist.
+

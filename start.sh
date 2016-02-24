@@ -40,6 +40,12 @@ if [ ! -f "$KEYDIR/private/${SP_HOSTNAME}.key" -o ! -f "$KEYDIR/certs/${SP_HOSTN
    cp /etc/ssl/certs/ssl-cert-snakeoil.pem "$KEYDIR/certs/${SP_HOSTNAME}.crt"
 fi
 
+if [ ! -f "$KEYDIR/private/acp_api_secret.txt" ]; then
+   base64 /dev/urandom | tr -d '/+' | dd bs=32 count=1 2>/dev/null > "$KEYDIR/private/acp_api_secret.txt"
+fi
+API_SECRET=$(cat $KEYDIR/private/acp_api_secret.txt)
+export API_SECRET
+
 CHAINSPEC=""
 export CHAINSPEC
 if [ -f "$KEYDIR/certs/${SP_HOSTNAME}.chain" ]; then
@@ -255,6 +261,7 @@ cat>>/etc/apache2/sites-available/default-ssl.conf<<EOF
            AuthType shibboleth
            ShibRequireSession On
            require valid-user
+           RequestHeader set X-API-Token "${API_SECRET}"
            RequestHeader set X_REMOTE_USER %{eppn}e
            RequestHeader set EPPN %{eppn}e
            RequestHeader set GIVENNAME %{givenName}e
@@ -269,6 +276,7 @@ cat>>/etc/apache2/sites-available/default-ssl.conf<<EOF
            AuthType shibboleth
            require shibboleth
            ShibRequireSession Off
+           RequestHeader set X-API-Token "${API_SECRET}"
            RequestHeader set X_REMOTE_USER %{eppn}e
            RequestHeader set EPPN %{eppn}e
            RequestHeader set GIVENNAME %{givenName}e

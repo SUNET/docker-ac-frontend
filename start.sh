@@ -197,6 +197,7 @@ ServerName ${SP_HOSTNAME}
 
         HostnameLookups Off
         ErrorLog /proc/self/fd/2
+        ErrorLog /var/log/apache2/${SP_HOSTNAME}-error.log
         LogLevel warn
         LogFormat "%v:%p %h %l %u %t \"%r\" %>s %O \"%{Referer}i\" \"%{User-Agent}i\"" vhost_combined
         LogFormat "%h %l %u %t \"%r\" %>s %O \"%{Referer}i\" \"%{User-Agent}i\"" combined
@@ -205,6 +206,7 @@ ServerName ${SP_HOSTNAME}
         LogFormat "%{User-agent}i" agent
 
         CustomLog /proc/self/fd/1 combined
+        CustomLog /var/log/apache2/${SP_HOSTNAME}.log combined
 
         ServerSignature off
 

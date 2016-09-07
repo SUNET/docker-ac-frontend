@@ -19,6 +19,7 @@ ENV SP_ABOUT /about
 ENV METADATA_SIGNER md-signer.crt
 ENV APPSERVERS "app1.example.com app2.example.com"
 ENV DEFAULT_LOGIN md.nordu.net
+ENV SERVER_LIMIT 930
 RUN rm -f /etc/apache2/sites-available/*
 RUN rm -f /etc/apache2/sites-enabled/*
 ADD start.sh /start.sh

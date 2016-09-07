@@ -367,6 +367,15 @@ cat /etc/apache2/sites-available/default-ssl.conf
 a2ensite default
 a2ensite default-ssl
 
+[ "x${SERVER_LIMIT}" == "x" ] && SERVER_LIMIT=930
+if [ "${SERVER_LIMIT}" -ne 930 ]; then
+  sed -i -e "/MaxRequestWorkers/s/16/${SERVER_LIMIT}/" -e "/ServerLimit/s/930/${SERVER_LIMIT}/" /etc/apache2/apache2.conf
+else
+  # Calculate MaxRequestWorkers 16 is the mem usage per thread
+  MAX_CLIENTS=$(expr  $(expr $(free -m | grep Mem | awk '{print $2}') - 512 ) / 16)
+  [ $MAX_CLIENTS -gt 16 ] && sed -i -e "/MaxRequestWorkers/s/16/$MAX_CLIENTS/" /etc/apache2/apache2.conf
+fi
+
 service shibd start
 rm -f /var/run/apache2/apache2.pid
 

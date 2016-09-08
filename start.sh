@@ -220,7 +220,7 @@ ServerName ${SP_HOSTNAME}
 	ProxyPass /_lvs.txt !
 
         ProxyTimeout 60
-        ProxyPass / balancer://connect/ stickysession=BREEZESESSION|session
+        ProxyPass / balancer://connect/
         ProxyPassReverse / balancer://connect/
         ProxyPreserveHost On
         <Proxy balancer://connect>
@@ -229,6 +229,8 @@ n=`echo $APPSERVERS | wc -w`
 f=`expr 100 / $n`
 for h in $APPSERVERS; do
    hn=`echo $h | awk -F. '{print $1}'`
+   echo "$h" | grep -q "[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}"
+   hn=`[ $? -eq 0 ] && echo $h | awk -F. '{print $4}' || echo "$hn"`
    echo "           BalancerMember http://$h:8443 route=$hn loadfactor=$f" >> /etc/apache2/sites-available/default-ssl.conf
 done
 

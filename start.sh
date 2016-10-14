@@ -130,7 +130,7 @@ cat>/etc/shibboleth/shibboleth2.xml<<EOF
             helpLocation="${SP_ABOUT}"
             styleSheet="/shibboleth-sp/main.css"/>
 
-        <Notify Channel="front" Location="https://${SP_HOSTNAME}/system/tenant/logout-notify.php" />
+        <Notify Channel="front" Location="https://${SP_HOSTNAME}/system/tenant/logout-notify.html" />
 
         <MetadataProvider type="XML" uri="http://md.nordu.net/role/idp.xml" backingFilePath="metadata.xml" reloadInterval="7200">
         </MetadataProvider>
@@ -192,7 +192,7 @@ ServerName ${SP_HOSTNAME}
         #RewriteLog "/tmp/rewrite.log"
         #RewriteLogLevel 10
         RewriteCond %{HTTP_REFERER} !^$ [NC]
-        RewriteRule ^/system/logout https://%{HTTP_HOST}/system/tenant/logout.php [R]
+        RewriteRule ^/system/logout https://%{HTTP_HOST}/system/tenant/logout.html [R]
         RewriteRule ^(.*/)index.html$ $1 [L,R=301]
 
         HostnameLookups Off
@@ -316,46 +316,55 @@ cat>/var/www/login.html<<EOF
 </html>
 EOF
 
-cat>/var/www/system/tenant/logout.php<<EOF
-<?php 
-\$session = isset(\$_COOKIE['BREEZESESSION']) ? \$_COOKIE['BREEZESESSION'] : "";
-setcookie("BREEZESESSION","",time()-3600,"/"); 
-?>
+cat>/var/www/system/tenant/logout.html<<EOF
+<!DOCTYPE html>
 <html>
-   <head><title>Logout</title></head>
-   <body>
-<?php
-require_once 'HTTP/Client.php';
-\$c = new HTTP_Client();
-\$c->get("https://${SP_HOSTNAME}/api/xml?action=logout&session=".\$session);
-?>
-   <script>
-      location.href="https://${SP_HOSTNAME}/Shibboleth.sso/Logout"
-   </script>
-   </body>
+  <head>
+    <title>Logout Adobe Connect</title>
+  </head>
+  <body>
+    <script>
+      var redirect = function redirect() {
+        location.href="https://${SP_HOSTNAME}/Shibboleth.sso/Logout";
+      };
+
+      var xhr = new XMLHttpRequest();
+      xhr.addEventListener("load",redirect);
+      xhr.addEventListener("timeout", redirect);
+      xhr.open("GET", "https://${SP_HOSTNAME}/api/xml?action=logout");
+      xhr.timeout = 5000; //5s anything slower and it doesn't make sense
+      xhr.send();
+    </script>
+  </body>
 </html>
 EOF
 
-cat>/var/www/system/tenant/logout-notify.php<<EOF
-<?php 
-\$session = isset(\$_COOKIE['BREEZESESSION']) ? \$_COOKIE['BREEZESESSION'] : "";
-setcookie("BREEZESESSION","",time()-3600,"/"); 
-?>
+cat>/var/www/system/tenant/logout-notify.html<<EOF
+<!DOCTYPE html>
 <html>
-   <head><title>Logout</title></head>
-   <body>
-<?php
-require_once 'HTTP/Client.php';
-\$c = new HTTP_Client();
-\$c->get("https://${SP_HOSTNAME}/api/xml?action=logout&session=".\$session);
-?>
-   <script>
-      location.href="<?php echo \$_GET['return']; ?>"
-   </script>
-   </body>
+  <head>
+    <title>Logout Adobe Connect</title>
+  </head>
+  <body>
+    <script>
+      var redirect = function redirect() {
+        var reg = /[?&]return=([^&#]*)/i
+        var result = reg.exec(location.href)
+        if (result) {
+          location.href=decodeURIComponent(result[1])
+        }
+      };
+
+      var xhr = new XMLHttpRequest();
+      xhr.addEventListener("load",redirect);
+      xhr.addEventListener("timeout", redirect);
+      xhr.open("GET", "https://${SP_HOSTNAME}/api/xml?action=logout");
+      xhr.timeout = 5000; //5s anything slower and it doesn't make sense
+      xhr.send();
+    </script>
+  </body>
 </html>
 EOF
-
 adduser -- _shibd ssl-cert
 mkdir -p /var/log/shibboleth
 mkdir -p /var/log/apache2 /var/lock/apache2

@@ -192,7 +192,7 @@ ServerName ${SP_HOSTNAME}
         #RewriteLog "/tmp/rewrite.log"
         #RewriteLogLevel 10
         RewriteCond %{HTTP_REFERER} !^$ [NC]
-        RewriteRule ^/system/logout https://%{HTTP_HOST}/system/tenant/logout.php [R]
+        RewriteRule ^/system/logout https://%{HTTP_HOST}/system/tenant/logout.html[R]
 
         HostnameLookups Off
         ErrorLog /proc/self/fd/2

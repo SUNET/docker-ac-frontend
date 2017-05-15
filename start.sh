@@ -192,7 +192,7 @@ ServerName ${SP_HOSTNAME}
         #RewriteLog "/tmp/rewrite.log"
         #RewriteLogLevel 10
         RewriteCond %{HTTP_REFERER} !^$ [NC]
-        RewriteRule ^/system/logout https://%{HTTP_HOST}/system/tenant/logout.html[R]
+        RewriteRule ^/system/logout https://%{HTTP_HOST}/system/tenant/logout.html [R]
 
         HostnameLookups Off
         ErrorLog /proc/self/fd/2
@@ -377,7 +377,7 @@ cat /etc/apache2/sites-available/default-ssl.conf
 a2ensite default
 a2ensite default-ssl
 
-[ "x${SERVER_LIMIT}" == "x" ] && SERVER_LIMIT=930
+[ "x${SERVER_LIMIT}" = "x" ] && SERVER_LIMIT=930
 if [ "${SERVER_LIMIT}" -ne 930 ]; then
   sed -i -e "/MaxRequestWorkers/s/16/${SERVER_LIMIT}/" -e "/ServerLimit/s/930/${SERVER_LIMIT}/" /etc/apache2/apache2.conf
 else
